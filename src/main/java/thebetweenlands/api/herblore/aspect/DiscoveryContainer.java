@@ -1,4 +1,4 @@
-package thebetweenlands.api.aspect;
+package thebetweenlands.api.herblore.aspect;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,7 +13,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants;
-import thebetweenlands.api.aspect.DiscoveryContainer.AspectDiscovery.EnumDiscoveryResult;
+import thebetweenlands.api.herblore.aspect.DiscoveryContainer.AspectDiscovery.EnumDiscoveryResult;
 import thebetweenlands.api.item.IDiscoveryProvider;
 import thebetweenlands.common.herblore.aspect.AspectManager;
 

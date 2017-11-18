@@ -3,7 +3,7 @@ package thebetweenlands.common.herblore.elixir;
 import java.util.ArrayList;
 import java.util.List;
 
-import thebetweenlands.api.aspect.IAspectType;
+import thebetweenlands.api.herblore.aspect.IAspectType;
 import thebetweenlands.common.herblore.elixir.effects.ElixirEffect;
 import thebetweenlands.common.registries.AspectRegistry;
 

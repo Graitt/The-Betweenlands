@@ -1,4 +1,4 @@
-package thebetweenlands.api.aspect;
+package thebetweenlands.api.herblore.aspect;
 
 import javax.annotation.Nullable;
 

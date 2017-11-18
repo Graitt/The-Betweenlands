@@ -5,7 +5,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import thebetweenlands.api.aspect.Aspect;
+import thebetweenlands.api.herblore.aspect.Aspect;
 import thebetweenlands.common.herblore.Amounts;
 
 import javax.annotation.Nullable;

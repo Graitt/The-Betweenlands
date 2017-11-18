@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-import thebetweenlands.api.aspect.IAspectType;
+import thebetweenlands.api.herblore.aspect.IAspectType;
 import thebetweenlands.common.herblore.Amounts;
 import thebetweenlands.common.herblore.aspect.AspectManager;
 import thebetweenlands.common.herblore.aspect.AspectManager.AspectGroup;

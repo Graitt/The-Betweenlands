@@ -1,7 +1,7 @@
 package thebetweenlands.common.recipe.purifier;
 
 import net.minecraft.item.ItemStack;
-import thebetweenlands.api.aspect.ItemAspectContainer;
+import thebetweenlands.api.herblore.aspect.ItemAspectContainer;
 import thebetweenlands.common.item.herblore.ItemAspectVial;
 
 public class PurifierRecipeAspectVial extends PurifierRecipe {

@@ -15,9 +15,10 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import org.lwjgl.input.Keyboard;
-import thebetweenlands.api.aspect.Aspect;
-import thebetweenlands.api.aspect.IAspectType;
-import thebetweenlands.api.aspect.ItemAspectContainer;
+
+import thebetweenlands.api.herblore.aspect.Aspect;
+import thebetweenlands.api.herblore.aspect.IAspectType;
+import thebetweenlands.api.herblore.aspect.ItemAspectContainer;
 import thebetweenlands.client.handler.ScreenRenderHandler;
 import thebetweenlands.client.tab.BLCreativeTabs;
 import thebetweenlands.common.block.container.BlockAspectVial;

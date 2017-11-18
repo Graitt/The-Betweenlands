@@ -13,8 +13,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
-import thebetweenlands.api.aspect.DiscoveryContainer;
-import thebetweenlands.api.aspect.DiscoveryContainer.AspectDiscovery;
+import thebetweenlands.api.herblore.aspect.DiscoveryContainer;
+import thebetweenlands.api.herblore.aspect.DiscoveryContainer.AspectDiscovery;
 import thebetweenlands.common.herblore.aspect.AspectManager;
 
 public class CommandAspectDiscovery extends CommandBase {

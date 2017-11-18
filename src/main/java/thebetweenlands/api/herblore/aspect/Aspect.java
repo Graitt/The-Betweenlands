@@ -1,4 +1,4 @@
-package thebetweenlands.api.aspect;
+package thebetweenlands.api.herblore.aspect;
 
 import net.minecraft.nbt.NBTTagCompound;
 import thebetweenlands.common.registries.AspectRegistry;

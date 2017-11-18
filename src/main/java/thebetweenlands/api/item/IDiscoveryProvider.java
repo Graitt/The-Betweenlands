@@ -1,6 +1,6 @@
 package thebetweenlands.api.item;
 
-import thebetweenlands.api.aspect.DiscoveryContainer;
+import thebetweenlands.api.herblore.aspect.DiscoveryContainer;
 
 public interface IDiscoveryProvider<P> {
 	/**

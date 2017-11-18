@@ -8,10 +8,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import thebetweenlands.api.aspect.Aspect;
-import thebetweenlands.api.aspect.AspectItem;
-import thebetweenlands.api.aspect.DiscoveryContainer;
-import thebetweenlands.api.aspect.IAspectType;
+import thebetweenlands.api.herblore.aspect.Aspect;
+import thebetweenlands.api.herblore.aspect.AspectItem;
+import thebetweenlands.api.herblore.aspect.DiscoveryContainer;
+import thebetweenlands.api.herblore.aspect.IAspectType;
 import thebetweenlands.common.herblore.aspect.AspectManager;
 
 @SideOnly(Side.CLIENT)

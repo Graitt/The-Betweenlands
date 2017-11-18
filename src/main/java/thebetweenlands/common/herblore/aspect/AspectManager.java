@@ -19,10 +19,10 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
-import thebetweenlands.api.aspect.Aspect;
-import thebetweenlands.api.aspect.AspectItem;
-import thebetweenlands.api.aspect.DiscoveryContainer;
-import thebetweenlands.api.aspect.IAspectType;
+import thebetweenlands.api.herblore.aspect.Aspect;
+import thebetweenlands.api.herblore.aspect.AspectItem;
+import thebetweenlands.api.herblore.aspect.DiscoveryContainer;
+import thebetweenlands.api.herblore.aspect.IAspectType;
 import thebetweenlands.common.world.storage.BetweenlandsWorldStorage;
 
 public class AspectManager {

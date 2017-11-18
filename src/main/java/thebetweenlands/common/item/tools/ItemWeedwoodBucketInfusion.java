@@ -12,10 +12,11 @@ import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.input.Keyboard;
-import thebetweenlands.api.aspect.Aspect;
-import thebetweenlands.api.aspect.DiscoveryContainer;
-import thebetweenlands.api.aspect.IAspectType;
-import thebetweenlands.api.aspect.ItemAspectContainer;
+
+import thebetweenlands.api.herblore.aspect.Aspect;
+import thebetweenlands.api.herblore.aspect.DiscoveryContainer;
+import thebetweenlands.api.herblore.aspect.IAspectType;
+import thebetweenlands.api.herblore.aspect.ItemAspectContainer;
 import thebetweenlands.common.TheBetweenlands;
 import thebetweenlands.common.herblore.aspect.AspectManager;
 import thebetweenlands.common.herblore.elixir.ElixirRecipe;

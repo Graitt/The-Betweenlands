@@ -4,7 +4,7 @@ import org.lwjgl.opengl.GL11;
 
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.util.ResourceLocation;
-import thebetweenlands.api.aspect.IAspectType;
+import thebetweenlands.api.herblore.aspect.IAspectType;
 import thebetweenlands.client.render.model.tile.ModelGeckoCage;
 import thebetweenlands.client.render.model.tile.ModelGeckoCorrupted;
 import thebetweenlands.client.render.model.tile.ModelGeckoGreen;
