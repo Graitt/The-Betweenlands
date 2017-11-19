@@ -2,7 +2,7 @@ package thebetweenlands.api.herblore.rune;
 
 import net.minecraft.world.World;
 
-public interface IRuneMark<T extends IRuneMark<T, F>, F> {
+public interface IRuneMark<F> {
 	/**
 	 * Returns the unlocalized name of this rune mark
 	 * @return
@@ -16,15 +16,6 @@ public interface IRuneMark<T extends IRuneMark<T, F>, F> {
 	public boolean isValid();
 
 	/**
-	 * Creates a new rune mark for the given object
-	 * @param object The object that should be marked
-	 * @param world The world the object is in
-	 * @param 
-	 * @return
-	 */
-	public T create(F object, World world);
-
-	/**
 	 * Returns the object type
 	 * @return
 	 */
@@ -35,11 +26,20 @@ public interface IRuneMark<T extends IRuneMark<T, F>, F> {
 	 * @return
 	 */
 	public F get();
+	
+	/**
+	 * Returns the marked object
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public default <T> T getUnsafe() {
+		return (T) this.get();
+	}
 
 	/**
 	 * Returns whether the specified rune mark can replace this rune mark
 	 * @param mark
 	 * @return
 	 */
-	public boolean isApplicable(IRuneMark<?, ?> mark);
+	public boolean isApplicable(IRuneMark<?> mark);
 }

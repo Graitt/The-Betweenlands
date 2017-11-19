@@ -1,18 +1,36 @@
 package thebetweenlands.common.herblore.rune;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import javax.annotation.Nullable;
 
-import thebetweenlands.api.herblore.aspect.IAspectType;
-import thebetweenlands.api.herblore.rune.IInfusedRune;
+import net.minecraft.util.Tuple;
+import net.minecraft.util.math.MathHelper;
 import thebetweenlands.api.herblore.rune.IRune;
 import thebetweenlands.api.herblore.rune.IRuneChain;
+import thebetweenlands.api.herblore.rune.IRuneEffect;
 import thebetweenlands.api.herblore.rune.IRuneMark;
+import thebetweenlands.api.herblore.rune.IRuneMarkContainer;
+import thebetweenlands.api.herblore.rune.RuneMarkContainer;
 import thebetweenlands.api.herblore.rune.RuneType;
 
 public class RuneChain implements IRuneChain {
-	protected IInfusedRune[] catalystRunes;
-	protected IInfusedRune[] effectRunes;
-	protected IInfusedRune[] allRunes;
+	//TODO: Use arrays instead instead of lists/maps?
+	protected List<IRune> catalystRunes = new ArrayList<>();
+	protected List<IRune> effectRunes = new ArrayList<>();
+	protected List<IRune> allRunes = new ArrayList<>();
+
+	protected Map<Integer, List<Tuple<Integer, Integer>>[]> markLinksOutputs = new HashMap<>();
+	protected Map<Integer, Tuple<Integer, Integer>[]> markLinksInputs = new HashMap<>();
+
+	protected List<IRuneEffect> runeEffects = new ArrayList<>();
+
+	protected Map<Integer, List<IRuneMark>[]> availableMarks = new HashMap<>();
 
 	protected int currentEffectRune = 0;
 
@@ -21,15 +39,20 @@ public class RuneChain implements IRuneChain {
 	protected float runeActivationCooldown = 1;
 
 	@Override
+	public int getMaximumRuneCount() {
+		return 32;
+	}
+
+	@Override
 	public void cleanup() {
-		for(IInfusedRune rune : this.allRunes) {
+		for(IRune rune : this.allRunes) {
 			rune.cleanup();
 		}
 	}
 
 	@Override
 	public void update() {
-		for(IInfusedRune rune : this.allRunes) {
+		for(IRune rune : this.allRunes) {
 			rune.update();
 		}
 
@@ -40,9 +63,11 @@ public class RuneChain implements IRuneChain {
 
 	@Override
 	public void activate() {
-		if(this.effectRunes.length == 0) {
+		if(this.effectRunes.size()== 0) {
 			return;
 		}
+		this.availableMarks.clear();
+		this.runeEffects.clear();
 		this.runeActivationCooldown = 1;
 		this.active = true;
 		this.currentEffectRune = 0;
@@ -51,18 +76,108 @@ public class RuneChain implements IRuneChain {
 	protected void updateActiveChain() {
 		this.runeActivationCooldown--;
 
-		while(this.isActive() && Math.abs(this.runeActivationCooldown) >= 0.001F) {
-			IInfusedRune pendingRune = this.effectRunes[this.currentEffectRune];
+		while(this.isActive() && this.runeActivationCooldown <= 0.0001F) {
+			IRune pendingRune = this.effectRunes.get(this.currentEffectRune);
 
-			if(pendingRune.getAspect().amount >= pendingRune.getCost()) {
+			IRuneMarkContainer runeMarkContainer = this.getRuneMarks(this.catalystRunes.size() + this.currentEffectRune);
 
-				//TODO: Rune activation logic
+			boolean activated = false;
 
-				pendingRune.drain(pendingRune.getCost(), false);
+			float cooldown = 0.0F;
+
+			float chainCostMultiplier = pendingRune.getChainCostMultiplier(runeMarkContainer);
+
+			int totalCombinations = 1;
+			int[] markCounts = new int[runeMarkContainer.getSlotCount()];
+			int[] divs = new int[runeMarkContainer.getSlotCount()];
+			for(int slot = 0; slot < runeMarkContainer.getSlotCount(); slot++) {
+				totalCombinations *= (markCounts[slot] = runeMarkContainer.getMarkCount(slot));
+
+				int div = 1;
+				if(slot > 0) {
+					for(int divSlotIndex = slot - 1; divSlotIndex < markCounts.length - 1; divSlotIndex++) {
+						div *= markCounts[divSlotIndex];
+					}
+				}
+				divs[slot] = div;
 			}
 
-			this.runeActivationCooldown += pendingRune.getDuration();
+			for(int i = 0; i < totalCombinations; i++) {
+				//The current combination of rune marks
+				IRuneMark[] iterationRuneMarks = new IRuneMark[runeMarkContainer.getSlotCount()];
+
+				for(int slot = 0; slot < markCounts.length; slot++) {
+					iterationRuneMarks[slot] = runeMarkContainer.getMark(slot, (i / divs[slot]) % markCounts[slot]);
+				}
+
+				IRuneMarkContainer iterationRuneMarkContainer = new RuneMarkContainer(iterationRuneMarks);
+
+				if(this.tryActivateRune(pendingRune, iterationRuneMarkContainer, i > 0 ? chainCostMultiplier : 1)) {
+					//Use the maximum cooldown as cooldown until the next rune can be activated
+					cooldown = Math.max(cooldown, pendingRune.getDuration(iterationRuneMarkContainer));
+					activated = true;
+				} else {
+					//Chain can no longer execute
+					this.stop();
+					break;
+				}
+			}
+
+			if(!activated){
+				//Chain can no longer execute
+				this.stop();
+			} else {
+				this.runeActivationCooldown += cooldown;
+				this.currentEffectRune++;
+
+				if(this.currentEffectRune == this.getRuneCount()) {
+					this.stop();
+				}
+			}
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	protected boolean tryActivateRune(IRune rune, IRuneMarkContainer marks, float chainCostMultiplier) {
+		if(rune.canActivate(marks)) {
+			int cost = rune.getCost(marks);
+
+			//Apply chain cost multiplier to all following activations
+			cost = MathHelper.ceil(cost * chainCostMultiplier);
+
+			if(rune.getAspect().amount >= cost) {
+				//Activate rune and get effect
+				IRuneEffect effect = rune.activate(marks);
+
+				if(effect != null) {
+					//Activate rune effect
+					effect.activate();
+					this.runeEffects.add(effect);
+				}
+
+				//Get provided marks
+				IRuneMarkContainer generatedMarks = rune.generateRuneMarks(Optional.of(marks));
+
+				//Store provided marks
+				List<IRuneMark>[] availableMarkLists = this.availableMarks.get(this.catalystRunes.size() + this.currentEffectRune);
+				if(availableMarkLists == null) {
+					this.availableMarks.put(this.catalystRunes.size() + this.currentEffectRune, availableMarkLists = new List[generatedMarks.getSlotCount()]);
+				}
+				for(int m = 0; m < availableMarkLists.length; m++) {
+					List<IRuneMark> availableMarkList = availableMarkLists[m];
+					if(availableMarkList == null) {
+						availableMarkLists[m] = availableMarkList = new ArrayList<>(generatedMarks.getMarkCount(m));
+					}
+					for(int m2 = 0; m2 < generatedMarks.getMarkCount(m); m2++) {
+						availableMarkList.add(generatedMarks.getMark(m, m2));
+					}
+				}
+
+				rune.drain(cost, false);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
@@ -71,15 +186,17 @@ public class RuneChain implements IRuneChain {
 	}
 
 	@Override
-	public void cancel(boolean refund) {
+	public void stop() {
 		this.active = false;
 
-		//TODO: Implement refund
+		for(IRuneEffect effect : this.runeEffects) {
+			effect.finishChain();
+		}
 	}
 
 	@Override
 	public int getPendingRune() {
-		return this.catalystRunes.length + this.currentEffectRune;
+		return this.catalystRunes.size() + this.currentEffectRune;
 	}
 
 	@Override
@@ -88,106 +205,212 @@ public class RuneChain implements IRuneChain {
 	}
 
 	@Override
-	public boolean addRune(IRune rune, IAspectType type) {
-		return this.addRune(rune, type, this.allRunes.length);
+	public boolean addRune(IRune rune) {
+		if(rune.getType() == RuneType.CATALYST) {
+			this.catalystRunes.add(rune);
+		} else {
+			this.effectRunes.add(rune);
+		}
+		this.allRunes.add(rune);
+		return true;
 	}
 
 	@Override
-	public boolean addRune(IRune rune, IAspectType type, int slot) {
-		if(slot < 0 || slot >= this.allRunes.length) {
+	public boolean addRune(IRune rune, int slot) {
+		if(slot < 0 || slot >= this.allRunes.size()) {
 			return false;
 		}
-		IInfusedRune newRune = rune.infuse(type);
-		if(newRune.getType() == RuneType.CATALYST) {
-			IInfusedRune[] catalysts = new IInfusedRune[this.catalystRunes.length + 1];
-			for(int i = 0; i < this.catalystRunes.length + 1; i++) {
-				if(i < slot) {
-					catalysts[i] = this.catalystRunes[i];
-				} else if(i == slot) {
-					catalysts[i] = newRune;
-				} else {
-					catalysts[i] = this.catalystRunes[i + 1];
-				}
-			}
-			this.catalystRunes = catalysts;
+		if(rune.getType() == RuneType.CATALYST) {
+			this.catalystRunes.add(slot, rune);
 		} else {
-			slot -= this.catalystRunes.length;
-			IInfusedRune[] effectRunes = new IInfusedRune[this.effectRunes.length + 1];
-			for(int i = 0; i < this.effectRunes.length + 1; i++) {
-				if(i < slot) {
-					effectRunes[i] = this.effectRunes[i];
-				} else if(i == slot) {
-					effectRunes[i] = newRune;
-				} else {
-					effectRunes[i] = this.effectRunes[i + 1];
-				}
-			}
-			this.effectRunes = effectRunes;
+			this.effectRunes.add(slot - this.catalystRunes.size(), rune);
 		}
-		this.allRunes = new IInfusedRune[this.allRunes.length + 1];
-		System.arraycopy(this.catalystRunes, 0, this.allRunes, 0, this.catalystRunes.length);
-		System.arraycopy(this.effectRunes, 0, this.allRunes, this.catalystRunes.length, this.effectRunes.length);
+		this.allRunes.add(slot, rune);
 		return true;
 	}
 
 	@Override
 	@Nullable
-	public IInfusedRune removeRune(int slot) {
-		if(slot < 0 || slot >= this.allRunes.length) {
+	public IRune removeRune(int slot) {
+		if(slot < 0 || slot >= this.allRunes.size()) {
 			return null;
 		}
-		IInfusedRune rune = this.getRune(slot);
+		IRune rune = this.getRune(slot);
 		if(rune.getType() == RuneType.CATALYST) {
-			IInfusedRune[] catalysts = new IInfusedRune[this.catalystRunes.length - 1];
-			for(int i = 0; i < this.catalystRunes.length - 1; i++) {
-				if(i < slot) {
-					catalysts[i] = this.catalystRunes[i];
-				} else {
-					catalysts[i] = this.catalystRunes[i + 1];
-				}
-			}
-			this.catalystRunes = catalysts;
+			this.catalystRunes.remove(slot);
 		} else {
-			slot -= this.catalystRunes.length;
-			IInfusedRune[] effectRunes = new IInfusedRune[this.effectRunes.length - 1];
-			for(int i = 0; i < this.effectRunes.length - 1; i++) {
-				if(i < slot) {
-					effectRunes[i] = this.effectRunes[i];
-				} else {
-					effectRunes[i] = this.effectRunes[i + 1];
-				}
-			}
-			this.effectRunes = effectRunes;
+			this.effectRunes.remove(slot - this.catalystRunes.size());
 		}
-		this.allRunes = new IInfusedRune[this.allRunes.length + 1];
-		System.arraycopy(this.catalystRunes, 0, this.allRunes, 0, this.catalystRunes.length);
-		System.arraycopy(this.effectRunes, 0, this.allRunes, this.catalystRunes.length, this.effectRunes.length);
+		this.allRunes.remove(slot);
+		this.markLinksInputs.remove(slot);
+		this.markLinksOutputs.remove(slot);
 		return rune;
 	}
 
 	@Override
-	public IInfusedRune[] getRunes() {
-		return this.allRunes;
+	public int getRuneCount() {
+		return this.allRunes.size();
 	}
 
 	@Override
 	@Nullable
-	public IInfusedRune getRune(int slot) {
-		if(slot < 0 || slot >= this.allRunes.length) {
+	public IRune getRune(int slot) {
+		if(slot < 0 || slot >= this.allRunes.size()) {
 			return null;
 		}
-		return this.allRunes[slot];
+		return this.allRunes.get(slot);
 	}
 
 	@Override
-	public IInfusedRune[] getLinkedRunes(int slot) {
-		// TODO Auto-generated method stub
+	public int getLinkedInputRuneCount(int slot, int outputMarkIndex) {
+		List<Tuple<Integer, Integer>>[] outputLinks = this.markLinksOutputs.get(slot);
+		if(outputLinks != null && outputMarkIndex >= 0 && outputMarkIndex < outputLinks.length) {
+			List<Tuple<Integer, Integer>> markOutputLinks = outputLinks[outputMarkIndex];
+			if(markOutputLinks != null) {
+				return markOutputLinks.size();
+			}
+		}
+		return 0;
+	}
+
+	@Override
+	@Nullable
+	public Tuple<Integer, Integer> getLinkedInputRune(int slot, int outputMarkIndex, int index) {
+		List<Tuple<Integer, Integer>>[] outputLinks = this.markLinksOutputs.get(slot);
+		if(outputLinks != null && outputMarkIndex >= 0 && outputMarkIndex < outputLinks.length) {
+			List<Tuple<Integer, Integer>> markOutputLinks = outputLinks[outputMarkIndex];
+			if(markOutputLinks != null && index >= 0 && index < markOutputLinks.size()) {
+				return markOutputLinks.get(index);
+			}
+		}
 		return null;
 	}
 
 	@Override
-	public IRuneMark[] getRuneMarks(int slot) {
-		// TODO Auto-generated method stub
+	@Nullable
+	public Tuple<Integer, Integer> getLinkedOutputRune(int slot, int inputMarkIndex) {
+		Tuple<Integer, Integer>[] inputLinks = this.markLinksInputs.get(slot);
+		if(inputLinks != null && inputMarkIndex >= 0 && inputMarkIndex < inputLinks.length) {
+			return inputLinks[inputMarkIndex];
+		}
 		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean linkRune(int outputRuneSlot, int outputMarkIndex, int inputRuneSlot, int inputMarkIndex) {
+		if(outputRuneSlot < 0 || outputRuneSlot >= this.allRunes.size()) return false;
+		if(inputRuneSlot < 0 || inputRuneSlot >= this.allRunes.size()) return false;
+
+		IRune outputRune = this.getRune(outputRuneSlot);
+		IRuneMarkContainer outputRuneMarks = outputRune.generateRuneMarks(Optional.<IRuneMarkContainer>empty()); 
+		IRune inputRune = this.getRune(inputRuneSlot);
+		IRuneMarkContainer inputRuneMarks = inputRune.getRequiredRuneMarks();
+
+		List<Tuple<Integer, Integer>>[] outputLinks = this.markLinksOutputs.get(outputRuneSlot);
+		if(outputLinks == null) {
+			this.markLinksOutputs.put(outputRuneSlot, outputLinks = new ArrayList[outputRuneMarks.getSlotCount()]);
+		}
+
+		if(outputMarkIndex < 0 || outputMarkIndex >= outputRuneMarks.getSlotCount()) return false;
+		if(inputMarkIndex < 0 || inputMarkIndex >= inputRuneMarks.getSlotCount()) return false;
+
+		if(!inputRuneMarks.getMark(inputMarkIndex, 0).isApplicable(outputRuneMarks.getMark(outputMarkIndex, 0))) return false;
+
+		List<Tuple<Integer, Integer>> slotOutputLinks = outputLinks[outputMarkIndex];
+
+		if(slotOutputLinks == null) {
+			outputLinks[outputMarkIndex] = slotOutputLinks = new ArrayList<>();
+		} else {
+			for(Tuple<Integer, Integer> link : slotOutputLinks) {
+				if(link.getFirst() == inputRuneSlot && link.getSecond() == inputMarkIndex) {
+					//Already linked
+					return false;
+				}
+			}
+		}
+
+		slotOutputLinks.add(new Tuple<>(inputRuneSlot, inputMarkIndex));
+
+		Tuple<Integer, Integer>[] slotInputLinks = this.markLinksInputs.get(inputRuneSlot);
+		if(slotInputLinks == null) {
+			this.markLinksInputs.put(inputRuneSlot, slotInputLinks = new Tuple[inputRuneMarks.getSlotCount()]);
+		}
+
+		slotInputLinks[inputMarkIndex] = new Tuple<>(outputRuneSlot, outputMarkIndex);
+
+		return true;
+	}
+
+	@Override
+	public boolean unlinkRune(int outputRuneSlot, int outputMarkIndex, int inputRuneSlot, int inputMarkIndex) {
+		if(outputRuneSlot < 0 || outputRuneSlot >= this.allRunes.size()) return false;
+		if(inputRuneSlot < 0 || inputRuneSlot >= this.allRunes.size()) return false;
+
+		IRune outputRune = this.getRune(outputRuneSlot);
+		IRuneMarkContainer outputRuneMarks = outputRune.generateRuneMarks(Optional.<IRuneMarkContainer>empty()); 
+		IRune inputRune = this.getRune(inputRuneSlot);
+		IRuneMarkContainer inputRuneMarks = inputRune.getRequiredRuneMarks();
+
+		if(outputMarkIndex < 0 || outputMarkIndex >= outputRuneMarks.getSlotCount()) return false;
+		if(inputMarkIndex < 0 || inputMarkIndex >= inputRuneMarks.getSlotCount()) return false;
+
+		boolean unlinked = false;
+
+		List<Tuple<Integer, Integer>>[] outputLinks = this.markLinksOutputs.get(outputRuneSlot);
+		if(outputLinks != null) {
+			List<Tuple<Integer, Integer>> slotOutputLinks = outputLinks[outputMarkIndex];
+
+			Iterator<Tuple<Integer, Integer>> it = slotOutputLinks.iterator();
+			while(it.hasNext()) {
+				Tuple<Integer, Integer> link = it.next();
+				if(link.getFirst() == inputRuneSlot && link.getSecond() == inputMarkIndex) {
+					it.remove();
+					unlinked = true;
+				}
+			}
+		}
+
+		Tuple<Integer, Integer>[] slotInputLinks = this.markLinksInputs.get(inputRuneSlot);
+		if(slotInputLinks != null) {
+			Tuple<Integer, Integer> link = slotInputLinks[inputMarkIndex];
+			if(link.getFirst() == outputRuneSlot && link.getSecond() == outputMarkIndex) {
+				slotInputLinks[inputMarkIndex] = null;
+				unlinked = true;
+			}
+		}
+
+		return unlinked;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public IRuneMarkContainer getRuneMarks(int slot) {
+		if(slot >= 0 && slot < this.allRunes.size()) {
+
+			IRune rune = this.allRunes.get(slot);
+
+			Tuple<Integer, Integer>[] links = this.markLinksInputs.get(slot);
+
+			if(links != null) {
+				List<IRuneMark>[] markLists = new List[rune.getRequiredRuneMarks().getSlotCount()];
+
+				for(int m = 0; m < links.length; m++) {
+					List<IRuneMark>[] availableMarkLists = this.availableMarks.get(links[m].getFirst());
+					if(availableMarkLists.length >= links[m].getSecond()) {
+						List<IRuneMark> availableMarks = availableMarkLists[links[m].getSecond()];
+						if(availableMarks != null) {
+							markLists[m] = availableMarks;
+						} else {
+							markLists[m] = new ArrayList<IRuneMark>();
+						}
+					}
+				}
+
+				return new RuneMarkContainer(markLists);
+			}
+		}
+
+		return new RuneMarkContainer();
 	}
 }

@@ -1,14 +1,18 @@
 package thebetweenlands.common.herblore.rune;
 
+import java.util.Optional;
+
 import net.minecraft.util.math.MathHelper;
 import thebetweenlands.api.herblore.aspect.Aspect;
 import thebetweenlands.api.herblore.aspect.AspectContainer;
 import thebetweenlands.api.herblore.aspect.IAspectType;
-import thebetweenlands.api.herblore.rune.IInfusedRune;
+import thebetweenlands.api.herblore.rune.IRune;
 import thebetweenlands.api.herblore.rune.IRuneChain;
-import thebetweenlands.api.herblore.rune.IRuneMark;
+import thebetweenlands.api.herblore.rune.IRuneMarkContainer;
+import thebetweenlands.api.herblore.rune.RuneMarkContainer;
+import thebetweenlands.api.herblore.rune.RuneType;
 
-public abstract class AbstractInfusedRune implements IInfusedRune {
+public abstract class AbstractRune implements IRune {
 	protected final IAspectType type;
 
 	protected IRuneChain chain;
@@ -16,15 +20,15 @@ public abstract class AbstractInfusedRune implements IInfusedRune {
 
 	protected AspectContainer aspects = new AspectContainer();
 
-	public AbstractInfusedRune(IAspectType type) {
+	public AbstractRune(IAspectType type) {
 		this.type = type;
 	}
 
 	@Override
 	public void cleanup() {
-		
+
 	}
-	
+
 	@Override
 	public void setChain(IRuneChain chain, int slot) {
 		this.chain = chain;
@@ -42,17 +46,9 @@ public abstract class AbstractInfusedRune implements IInfusedRune {
 	}
 
 	@Override
-	public boolean canActivate(IRuneMark[] marks) {
-		IRuneMark<?, ?>[] requirements = this.getRequiredRuneMarks();
-		if(marks.length == requirements.length) {
-			for(int i = 0; i < requirements.length; i++) {
-				if(!requirements[i].isApplicable(marks[i]) || !marks[i].isValid()) {
-					return false;
-				}
-			}
-			return true;
-		}
-		return false;
+	public boolean canActivate(IRuneMarkContainer marks) {
+		IRuneMarkContainer requirements = this.getRequiredRuneMarks();
+		return requirements.isApplicable(marks);
 	}
 
 	@Override
@@ -74,5 +70,22 @@ public abstract class AbstractInfusedRune implements IInfusedRune {
 	@Override
 	public Aspect getAspect() {
 		return this.aspects.getAspect(this.type);
+	}
+
+	@Override
+	public IRuneMarkContainer generateRuneMarks(Optional<IRuneMarkContainer> marks) {
+		if(this.getType() == RuneType.MARK) {
+			return this.provideRuneMarks(marks);
+		}
+		return RuneMarkContainer.EMPTY;
+	}
+
+	/**
+	 * @see IRune#generateRuneMarks(Optional)
+	 * @param marks
+	 * @return
+	 */
+	protected IRuneMarkContainer provideRuneMarks(Optional<IRuneMarkContainer> marks) {
+		return RuneMarkContainer.EMPTY;
 	}
 }

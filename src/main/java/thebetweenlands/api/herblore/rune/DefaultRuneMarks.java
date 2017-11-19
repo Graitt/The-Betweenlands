@@ -6,31 +6,26 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class DefaultRuneMarks {
-	public static class BlockRuneMark implements IRuneMark<BlockRuneMark, BlockPos> {
+	public static class BlockRuneMark implements IRuneMark<BlockPos> {
 		private final World world;
 		private final IBlockState originalState;
 		private final BlockPos pos;
 
-		private BlockRuneMark() {
-			this.pos = null;
-			this.originalState = null;
+		public BlockRuneMark() {
 			this.world = null;
+			this.originalState = null;
+			this.pos = null;
 		}
-
-		private BlockRuneMark(BlockPos pos, IBlockState originalState, World world) {
+		
+		public BlockRuneMark(BlockPos pos, World world) {
 			this.pos = pos;
-			this.originalState = originalState;
+			this.originalState = world.getBlockState(pos);
 			this.world = world;
 		}
 
 		@Override
 		public boolean isValid() {
 			return this.originalState == null || this.world == null || this.pos == null ? false : this.originalState.getBlock() == this.world.getBlockState(this.pos);
-		}
-
-		@Override
-		public BlockRuneMark create(BlockPos object, World world) {
-			return new BlockRuneMark(object, world.getBlockState(object), world);
 		}
 
 		@Override
@@ -44,8 +39,8 @@ public class DefaultRuneMarks {
 		}
 
 		@Override
-		public boolean isApplicable(IRuneMark<?, ?> mark) {
-			return mark.getType() == this.getType() && this.pos.equals(mark.get());
+		public boolean isApplicable(IRuneMark<?> mark) {
+			return this.getType().isAssignableFrom(mark.getType()) && (this.isValid() == mark.isValid() || this.pos.equals(mark.get()));
 		}
 
 		@Override
@@ -54,16 +49,16 @@ public class DefaultRuneMarks {
 		}
 	}
 
-	public static class EntityRuneMark implements IRuneMark<EntityRuneMark, Entity> {
+	public static class EntityRuneMark implements IRuneMark<Entity> {
 		private final World world;
 		private final Entity entity;
 
-		private EntityRuneMark() {
-			this.entity = null;
+		public EntityRuneMark() {
 			this.world = null;
+			this.entity = null;
 		}
-
-		private EntityRuneMark(Entity entity, World world) {
+		
+		public EntityRuneMark(Entity entity, World world) {
 			this.entity = entity;
 			this.world = world;
 		}
@@ -71,11 +66,6 @@ public class DefaultRuneMarks {
 		@Override
 		public boolean isValid() {
 			return this.entity == null || this.world == null || !this.entity.isEntityAlive() ? false : true;
-		}
-
-		@Override
-		public EntityRuneMark create(Entity object, World world) {
-			return new EntityRuneMark(object, world);
 		}
 
 		@Override
@@ -89,8 +79,8 @@ public class DefaultRuneMarks {
 		}
 
 		@Override
-		public boolean isApplicable(IRuneMark<?, ?> mark) {
-			return mark.getType() == this.getType() && this.entity == mark.get();
+		public boolean isApplicable(IRuneMark<?> mark) {
+			return mark.getType() == this.getType() && (this.isValid() == mark.isValid() || this.entity.equals(mark.get()));
 		}
 
 		@Override
@@ -98,7 +88,4 @@ public class DefaultRuneMarks {
 			return "rune_mark.entity";
 		}
 	}
-
-	public static final BlockRuneMark BLOCK = new BlockRuneMark();
-	public static final EntityRuneMark ENTITY = new EntityRuneMark();
 }
