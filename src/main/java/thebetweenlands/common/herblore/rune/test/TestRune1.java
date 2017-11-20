@@ -2,7 +2,6 @@ package thebetweenlands.common.herblore.rune.test;
 
 import java.util.Optional;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.BlockPos;
 import thebetweenlands.api.herblore.aspect.IAspectType;
 import thebetweenlands.api.herblore.rune.DefaultRuneMarks.BlockRuneMark;
@@ -68,8 +67,56 @@ public class TestRune1 extends AbstractRune {
 	}
 
 	@Override
+	public boolean canActivate(IRuneMarkContainer marks) {
+		return super.canActivate(marks) && this.getChain().getUserEntity() != null;
+	}
+
+	@Override
 	protected IRuneMarkContainer provideRuneMarks(Optional<IRuneMarkContainer> marks) {
-		int i = 0;
+		if(marks.isPresent()) {
+			int range = 5;
+
+			BlockPos pos = this.getChain().getUserEntity().getPosition();
+
+			IRuneMark[][] generated = new IRuneMark[1][(range+1)*2*(range+1)*2*(range+1)*2];
+
+			int i = 0;
+			for(int xo = -range; xo <= range; xo++) {
+				for(int yo = -range; yo <= range; yo++) {
+					for(int zo = -range; zo <= range; zo++) {
+						generated[0][i] = new BlockRuneMark(pos.add(xo, yo, zo), this.getChain().getWorld());
+						i++;
+					}
+				}
+			}
+
+			return new RuneMarkContainer(generated);
+		} else {
+			return new RuneMarkContainer(new IRuneMark[][]{
+				{
+					new BlockRuneMark()
+				}
+			});
+		}
+
+		/*if(marks.isPresent()) {
+			Vec3d start = this.getChain().getUserEntity().getPositionEyes(1);
+			Vec3d end = start.add(this.getChain().getUserEntity().getLookVec().scale(20));
+			RayTraceResult result = this.getChain().getWorld().rayTraceBlocks(start, end);
+			if(result.typeOfHit == RayTraceResult.Type.BLOCK) {
+				return new RuneMarkContainer(ImmutableList.of(new BlockRuneMark(result.getBlockPos(), this.getChain().getWorld())));
+			} else {
+				return RuneMarkContainer.EMPTY;
+			}
+		} else {
+			return new RuneMarkContainer(new IRuneMark[][]{
+				{
+					new BlockRuneMark()
+				}
+			});
+		}*/
+
+		/*int i = 0;
 		int k = 0;
 		return new RuneMarkContainer(new IRuneMark[][]{
 			{
@@ -89,6 +136,6 @@ public class TestRune1 extends AbstractRune {
 				new BlockRuneMark(new BlockPos(0, 0, k++), Minecraft.getMinecraft().world),
 				new BlockRuneMark(new BlockPos(0, 0, k++), Minecraft.getMinecraft().world)
 			}
-		});
+		});*/
 	}
 }

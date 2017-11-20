@@ -2,6 +2,8 @@ package thebetweenlands.common.item.misc;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
@@ -20,33 +22,44 @@ public class TestItem extends Item {
 	}
 
 	@Override
-	public EnumActionResult onItemUse(EntityPlayer player, World worldIn, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
-		if (!worldIn.isRemote) {
+	public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
+		if(!worldIn.isRemote) {
 			try {
-				RuneChain chain = new RuneChain();
-
+				RuneChain chain = new RuneChain(worldIn);
+	
+				chain.setUser(playerIn, playerIn.getPositionEyes(1));
+	
 				IRune rune1 = new TestRune1(AspectRegistry.ARMANIIS);
 				IRune rune2 = new TestRune2(AspectRegistry.CELAWYNN);
-
+	
 				rune1.fill(10000, false);
 				rune2.fill(10000, false);
-				
+	
 				chain.addRune(rune1);
 				chain.addRune(rune2);
-
+	
 				chain.linkRune(0, 0, 1, 0);
 				chain.linkRune(0, 1, 1, 1);
-
+	
 				chain.activate();
-				
+	
 				int ticks = 60;
 				for(int i = 0; i < ticks; i++) {
 					System.out.println("Tick: " + i);
 					chain.update();
 				}
+	
+				return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, playerIn.getHeldItem(handIn));
 			} catch(Exception ex) {
 				ex.printStackTrace();
 			}
+		}
+		return new ActionResult<ItemStack>(EnumActionResult.PASS, playerIn.getHeldItem(handIn));
+	}
+
+	@Override
+	public EnumActionResult onItemUse(EntityPlayer player, World worldIn, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+		if (!worldIn.isRemote) {
 			/*
 			WorldGenTarPoolDungeon gen = new WorldGenTarPoolDungeon();
 			gen.generate(worldIn, itemRand, pos.up());

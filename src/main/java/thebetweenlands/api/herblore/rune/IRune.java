@@ -39,6 +39,18 @@ public interface IRune extends ITickable {
 	public void setChain(IRuneChain chain, int slot);
 
 	/**
+	 * Returns the rune chain
+	 * @return
+	 */
+	public IRuneChain getChain();
+	
+	/**
+	 * Returns the rune chain slot this rune is in
+	 * @return
+	 */
+	public int getChainSlot();
+	
+	/**
 	 * Returns the required rune marks in a rune mark container
 	 * @return
 	 */
@@ -74,7 +86,7 @@ public interface IRune extends ITickable {
 	 * Drains from the aspect buffer
 	 * @param amount The actual amount that was drained
 	 * @param conversion Whether the amount should be multiplied by {@link #getFillRatio()} and then floored
-	 * @return
+	 * @return How much was drained
 	 */
 	public int drain(int amount, boolean conversion);
 
@@ -82,7 +94,7 @@ public interface IRune extends ITickable {
 	 * Fills the aspect buffer
 	 * @param amount The actual amount that was added
 	 * @param conversion Whether the amount should be multiplied by {@link #getFillRatio()} and then floored
-	 * @return
+	 * @return How much was added
 	 */
 	public int fill(int amount, boolean conversion);
 

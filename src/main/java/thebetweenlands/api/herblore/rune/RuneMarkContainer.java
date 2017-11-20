@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 
 public class RuneMarkContainer implements IRuneMarkContainer {
 	public static final IRuneMarkContainer EMPTY = new RuneMarkContainer();
-	
+
 	private final List<IRuneMark>[] marks;
 
 	@SuppressWarnings("unchecked")
@@ -110,5 +110,15 @@ public class RuneMarkContainer implements IRuneMarkContainer {
 			}
 		}
 		return true;
+	}
+
+	@Override
+	public CombinatorialIterator getCombinations() {
+		return new CombinatorialIterator(this) {
+			@Override
+			protected IRuneMarkContainer createSingularContainer(IRuneMark[] marks) {
+				return new RuneMarkContainer(marks);
+			}
+		};
 	}
 }

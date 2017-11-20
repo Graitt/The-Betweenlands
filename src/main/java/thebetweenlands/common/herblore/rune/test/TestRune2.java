@@ -1,5 +1,11 @@
 package thebetweenlands.common.herblore.rune.test;
 
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.math.BlockPos;
 import thebetweenlands.api.herblore.aspect.IAspectType;
 import thebetweenlands.api.herblore.rune.DefaultRuneMarks.BlockRuneMark;
 import thebetweenlands.api.herblore.rune.IRuneEffect;
@@ -29,18 +35,27 @@ public class TestRune2 extends AbstractRune {
 
 	@Override
 	public IRuneMarkContainer getRequiredRuneMarks() {
-		return new RuneMarkContainer(new IRuneMark[]{new BlockRuneMark(), new BlockRuneMark()});
+		return new RuneMarkContainer(new IRuneMark[]{new BlockRuneMark()});
 	}
 
 	@Override
 	public IRuneEffect activate(IRuneMarkContainer marks) {
-		System.out.println("ACTIVATE TEST RUNE 2 with marks: " + marks.getMark(0, 0).get() + " " + marks.getMark(1, 0).get());
+		BlockPos pos = marks.getMark(0, 0).<BlockPos>getUnsafe();
+
+		System.out.println("ACTIVATE TEST RUNE 2 with marks: " + pos);
+
+		IBlockState state = this.getChain().getWorld().getBlockState(pos);
+		TileEntity te = this.getChain().getWorld().getTileEntity(pos);
+		if(state.getBlock().canHarvestBlock(this.getChain().getWorld(), pos, (EntityPlayer)this.getChain().getUserEntity())) {
+			state.getBlock().harvestBlock(this.getChain().getWorld(), (EntityPlayer)this.getChain().getUserEntity(), pos, state, te, ItemStack.EMPTY);
+			this.getChain().getWorld().setBlockToAir(pos);
+		}
 		return null;
 	}
 
 	@Override
 	public int getBufferSize() {
-		return 20;
+		return 100;
 	}
 
 	@Override

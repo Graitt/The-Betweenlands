@@ -1,5 +1,8 @@
 package thebetweenlands.api.herblore.rune;
 
+/**
+ * The rune type determines how a rune in the chain is processed
+ */
 public enum RuneType {
 	/**
 	 * A catalyst rune serves as the trigger of a rune chain.
@@ -15,7 +18,9 @@ public enum RuneType {
 	MARK, 
 
 	/**
-	 * Predicate runes check for a certain condition and cancel the rune chain if that condition is not met.
+	 * Before a prediate rune is activated the rune chain creates a new branch for each input mark combination.
+	 * Each of those new branches will have exactly one of the input marks.
+	 * Then in the new branch the predicate rune is activated, it checks for a certain condition and cancels the current branch if that condition is not met.
 	 */
 	PREDICATE, 
 

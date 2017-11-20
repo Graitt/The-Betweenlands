@@ -2,21 +2,62 @@ package thebetweenlands.api.herblore.rune;
 
 import javax.annotation.Nullable;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.Tuple;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 
 /**
  * A rune chain consists of multiple runes that are activated one after another.
- * A rune chain requires at least one catalyst rune and one effect rune to activate itself
+ * At least one catalyst rune is required for the rune chain to be able to activate itself.
+ * 
+ * Generally, the rune chain runs from the beginning to the end by activating one rune at a time.
+ * However, if the next rune is a {@link RuneType#PREDICATE} type rune the chain can branch into
+ * multiple new branches, see {@link RuneType#PREDICATE} for details. All branches run at the same pace, so
+ * one rune activation per branch per rune chain step.
+ * If a non-predicate rune has mark inputs that have multiple marks available per input, then that rune is
+ * activated multiple times, once for each possible input mark combination. If this occurs or multiple branches are 
+ * updated in one step, no cooldown is applied until all marks or branches have been processed, and only then the highest cooldown that any of the activations
+ * in the branches would have produced is applied once to the rune chain after the step has ended.
+ * If a {@link RuneType#MARK} type rune produces marks then those marks are only added to the current branch.
  */
 public interface IRuneChain extends ITickable {
+	/**
+	 * Sets the entity that is currently using, or a position where the rune is being used at
+	 * @param entity
+	 */
+	public void setUser(@Nullable Entity entity, @Nullable Vec3d position);
+	
+	/**
+	 * Returns the user entity
+	 * @return
+	 */
+	@Nullable
+	public Entity getUserEntity();
+	
+	/**
+	 * Returns the user position
+	 * @return
+	 */
+	@Nullable
+	public Vec3d getUserPosition();
+	
+	/**
+	 * Returns the world
+	 * @return
+	 */
+	public World getWorld();
+	
 	/**
 	 * Called when the rune chain should no longer affect the world
 	 */
 	public void cleanup();
 
 	/**
-	 * Updates the rune chain every tick
+	 * Updates the rune chain every tick.
+	 * Runs through the chain if the rune chain is active and activates the
+	 * runes according to {@link RuneType}
 	 */
 	@Override
 	public void update();

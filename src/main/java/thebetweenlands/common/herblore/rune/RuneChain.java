@@ -9,13 +9,17 @@ import java.util.Optional;
 
 import javax.annotation.Nullable;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.util.Tuple;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 import thebetweenlands.api.herblore.rune.IRune;
 import thebetweenlands.api.herblore.rune.IRuneChain;
 import thebetweenlands.api.herblore.rune.IRuneEffect;
 import thebetweenlands.api.herblore.rune.IRuneMark;
 import thebetweenlands.api.herblore.rune.IRuneMarkContainer;
+import thebetweenlands.api.herblore.rune.IRuneMarkContainer.CombinatorialIterator;
 import thebetweenlands.api.herblore.rune.RuneMarkContainer;
 import thebetweenlands.api.herblore.rune.RuneType;
 
@@ -37,6 +41,36 @@ public class RuneChain implements IRuneChain {
 	protected boolean active = false;
 
 	protected float runeActivationCooldown = 1;
+
+	protected Entity userEntity;
+	protected Vec3d userPosition;
+
+	protected World world;
+
+	public RuneChain(World world) {
+		this.world = world;
+	}
+
+	@Override
+	public void setUser(Entity entity, Vec3d position) {
+		this.userEntity = entity;
+		this.userPosition = position;
+	}
+
+	@Override
+	public Entity getUserEntity() {
+		return this.userEntity;
+	}
+
+	@Override
+	public Vec3d getUserPosition() {
+		return this.userPosition;
+	}
+
+	@Override
+	public World getWorld() {
+		return this.world;
+	}
 
 	@Override
 	public int getMaximumRuneCount() {
@@ -79,6 +113,10 @@ public class RuneChain implements IRuneChain {
 		while(this.isActive() && this.runeActivationCooldown <= 0.0001F) {
 			IRune pendingRune = this.effectRunes.get(this.currentEffectRune);
 
+			if(pendingRune.getType() == RuneType.PREDICATE) {
+				//TODO Implement branching!
+			}
+
 			IRuneMarkContainer runeMarkContainer = this.getRuneMarks(this.catalystRunes.size() + this.currentEffectRune);
 
 			boolean activated = false;
@@ -87,30 +125,11 @@ public class RuneChain implements IRuneChain {
 
 			float chainCostMultiplier = pendingRune.getChainCostMultiplier(runeMarkContainer);
 
-			int totalCombinations = 1;
-			int[] markCounts = new int[runeMarkContainer.getSlotCount()];
-			int[] divs = new int[runeMarkContainer.getSlotCount()];
-			for(int slot = 0; slot < runeMarkContainer.getSlotCount(); slot++) {
-				totalCombinations *= (markCounts[slot] = runeMarkContainer.getMarkCount(slot));
+			CombinatorialIterator it = runeMarkContainer.getCombinations();
 
-				int div = 1;
-				if(slot > 0) {
-					for(int divSlotIndex = slot - 1; divSlotIndex < markCounts.length - 1; divSlotIndex++) {
-						div *= markCounts[divSlotIndex];
-					}
-				}
-				divs[slot] = div;
-			}
-
-			for(int i = 0; i < totalCombinations; i++) {
-				//The current combination of rune marks
-				IRuneMark[] iterationRuneMarks = new IRuneMark[runeMarkContainer.getSlotCount()];
-
-				for(int slot = 0; slot < markCounts.length; slot++) {
-					iterationRuneMarks[slot] = runeMarkContainer.getMark(slot, (i / divs[slot]) % markCounts[slot]);
-				}
-
-				IRuneMarkContainer iterationRuneMarkContainer = new RuneMarkContainer(iterationRuneMarks);
+			int i = 0;
+			while(it.hasNext()) {
+				IRuneMarkContainer iterationRuneMarkContainer = it.next();
 
 				if(this.tryActivateRune(pendingRune, iterationRuneMarkContainer, i > 0 ? chainCostMultiplier : 1)) {
 					//Use the maximum cooldown as cooldown until the next rune can be activated
@@ -121,6 +140,8 @@ public class RuneChain implements IRuneChain {
 					this.stop();
 					break;
 				}
+
+				i++;
 			}
 
 			if(!activated){
@@ -206,6 +227,7 @@ public class RuneChain implements IRuneChain {
 
 	@Override
 	public boolean addRune(IRune rune) {
+		rune.setChain(this, this.allRunes.size());
 		if(rune.getType() == RuneType.CATALYST) {
 			this.catalystRunes.add(rune);
 		} else {
@@ -220,6 +242,7 @@ public class RuneChain implements IRuneChain {
 		if(slot < 0 || slot >= this.allRunes.size()) {
 			return false;
 		}
+		rune.setChain(this, slot);
 		if(rune.getType() == RuneType.CATALYST) {
 			this.catalystRunes.add(slot, rune);
 		} else {
@@ -244,6 +267,7 @@ public class RuneChain implements IRuneChain {
 		this.allRunes.remove(slot);
 		this.markLinksInputs.remove(slot);
 		this.markLinksOutputs.remove(slot);
+		rune.setChain(null, 0);
 		return rune;
 	}
 

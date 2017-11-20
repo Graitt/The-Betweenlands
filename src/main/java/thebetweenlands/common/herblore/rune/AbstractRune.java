@@ -25,6 +25,16 @@ public abstract class AbstractRune implements IRune {
 	}
 
 	@Override
+	public IRuneChain getChain() {
+		return this.chain;
+	}
+	
+	@Override
+	public int getChainSlot() {
+		return this.slot;
+	}
+	
+	@Override
 	public void cleanup() {
 
 	}
@@ -53,17 +63,25 @@ public abstract class AbstractRune implements IRune {
 
 	@Override
 	public int drain(int amount, boolean conversion) {
-		return this.aspects.drain(this.type, conversion ? MathHelper.floor(amount * this.getFillRatio()) : amount);
+		int drained = this.aspects.drain(this.type, conversion ? MathHelper.floor(amount * this.getFillRatio()) : amount);
+		if(conversion) {
+			return MathHelper.floor(drained / this.getFillRatio());
+		}
+		return drained;
 	}
 
 	@Override
 	public int fill(int amount, boolean conversion) {
+		int input = amount;
 		if(conversion) {
 			amount = MathHelper.floor(amount * this.getFillRatio());
 		}
 		int diff = this.getBufferSize() - this.aspects.get(this.type);
 		amount = Math.min(amount, diff);
 		this.aspects.add(this.type, amount);
+		if(conversion) {
+			return amount = MathHelper.floor(amount / this.getFillRatio()) + (amount > 0 ? MathHelper.floor(input * this.getFillRatio()) : 0);
+		}
 		return amount;
 	}
 

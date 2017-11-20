@@ -1,5 +1,8 @@
 package thebetweenlands.api.herblore.rune;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 import javax.annotation.Nullable;
 
 /**
@@ -41,4 +44,76 @@ public interface IRuneMarkContainer {
 	 * @return
 	 */
 	public boolean isApplicable(IRuneMarkContainer container);
+
+	/**
+	 * Returns an iterator that iterates through all possible rune mark combinations
+	 * in this rune mark container
+	 * @return
+	 */
+	public CombinatorialIterator getCombinations();
+
+	public static abstract class CombinatorialIterator implements Iterator<IRuneMarkContainer> {
+		protected final int count;
+		protected final int[] markCounts;
+		protected final int[] divs;
+		protected final IRuneMarkContainer container;
+
+		protected int index = 0;
+
+		protected CombinatorialIterator(IRuneMarkContainer container) {
+			int totalCombinations = 1;
+			this.markCounts = new int[container.getSlotCount()];
+			this.divs = new int[container.getSlotCount()];
+			for(int slot = 0; slot < container.getSlotCount(); slot++) {
+				totalCombinations *= (markCounts[slot] = container.getMarkCount(slot));
+				int div = 1;
+				if(slot > 0) {
+					for(int divSlotIndex = slot - 1; divSlotIndex < markCounts.length - 1; divSlotIndex++) {
+						div *= markCounts[divSlotIndex];
+					}
+				}
+				divs[slot] = div;
+			}
+			this.count = totalCombinations;
+			this.container = container;
+		}
+
+		/**
+		 * Returns how many combinations there are in total
+		 * @return
+		 */
+		public int getCount() {
+			return this.count;
+		}
+
+		@Override
+		public boolean hasNext() {
+			return this.index < this.getCount();
+		}
+
+		@Override
+		public IRuneMarkContainer next() {
+			if(this.index >= this.getCount()) {
+				throw new NoSuchElementException();
+			}
+
+			IRuneMark[] iterationRuneMarks = new IRuneMark[this.container.getSlotCount()];
+
+			for(int slot = 0; slot < markCounts.length; slot++) {
+				iterationRuneMarks[slot] = this.container.getMark(slot, (this.index / this.divs[slot]) % this.markCounts[slot]);
+			}
+
+			this.index++;
+
+			return this.createSingularContainer(iterationRuneMarks);
+		}
+
+		/**
+		 * Creates a new rune mark container from the specified rune marks.
+		 * The array indices correspond to the slots
+		 * @param marks
+		 * @return
+		 */
+		protected abstract IRuneMarkContainer createSingularContainer(IRuneMark[] marks);
+	}
 }
