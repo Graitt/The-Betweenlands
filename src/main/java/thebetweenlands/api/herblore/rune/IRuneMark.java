@@ -41,5 +41,7 @@ public interface IRuneMark<F> {
 	 * @param mark
 	 * @return
 	 */
-	public boolean isApplicable(IRuneMark<?> mark);
+	public default boolean isApplicable(IRuneMark<?> mark) {
+		return this.getType() == mark.getType();
+	}
 }

@@ -4,10 +4,9 @@ import java.util.Optional;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.util.ITickable;
 import thebetweenlands.api.herblore.aspect.Aspect;
 
-public interface IRune extends ITickable {
+public interface IRune {
 	/**
 	 * Returns the unlocalized name of this rune
 	 * @return
@@ -21,17 +20,6 @@ public interface IRune extends ITickable {
 	public RuneType getType();
 
 	/**
-	 * Called when the rune should no longer affect the world
-	 */
-	public void cleanup();
-
-	/**
-	 * Updates the rune every tick
-	 */
-	@Override
-	public void update();
-
-	/**
 	 * Sets the rune chain and slot that this rune is in
 	 * @param chain
 	 * @param slot
@@ -43,13 +31,13 @@ public interface IRune extends ITickable {
 	 * @return
 	 */
 	public IRuneChain getChain();
-	
+
 	/**
 	 * Returns the rune chain slot this rune is in
 	 * @return
 	 */
 	public int getChainSlot();
-	
+
 	/**
 	 * Returns the required rune marks in a rune mark container
 	 * @return

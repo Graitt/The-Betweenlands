@@ -6,7 +6,7 @@ import java.util.NoSuchElementException;
 import javax.annotation.Nullable;
 
 /**
- * An immutable (!) container that has multiple slots that can store any number of rune marks
+ * A container that has multiple slots that can store any number of rune marks
  */
 public interface IRuneMarkContainer {
 	/**
@@ -65,14 +65,14 @@ public interface IRuneMarkContainer {
 			this.markCounts = new int[container.getSlotCount()];
 			this.divs = new int[container.getSlotCount()];
 			for(int slot = 0; slot < container.getSlotCount(); slot++) {
-				totalCombinations *= (markCounts[slot] = container.getMarkCount(slot));
+				totalCombinations *= (this.markCounts[slot] = container.getMarkCount(slot));
 				int div = 1;
 				if(slot > 0) {
-					for(int divSlotIndex = slot - 1; divSlotIndex < markCounts.length - 1; divSlotIndex++) {
-						div *= markCounts[divSlotIndex];
+					for(int divSlotIndex = slot - 1; divSlotIndex < this.markCounts.length - 1; divSlotIndex++) {
+						div *= this.markCounts[divSlotIndex];
 					}
 				}
-				divs[slot] = div;
+				this.divs[slot] = div;
 			}
 			this.count = totalCombinations;
 			this.container = container;
@@ -97,20 +97,21 @@ public interface IRuneMarkContainer {
 				throw new NoSuchElementException();
 			}
 
-			IRuneMark[] iterationRuneMarks = new IRuneMark[this.container.getSlotCount()];
+			IRuneMark[] iterationRuneMarks = new IRuneMark[this.markCounts.length];
 
-			for(int slot = 0; slot < markCounts.length; slot++) {
+			for(int slot = 0; slot < this.markCounts.length; slot++) {
 				iterationRuneMarks[slot] = this.container.getMark(slot, (this.index / this.divs[slot]) % this.markCounts[slot]);
 			}
-
+			
 			this.index++;
 
 			return this.createSingularContainer(iterationRuneMarks);
 		}
-
+		
 		/**
 		 * Creates a new rune mark container from the specified rune marks.
-		 * The array indices correspond to the slots
+		 * The array indices correspond to the slots. The array may have length 0, the
+		 * container should then be empty.
 		 * @param marks
 		 * @return
 		 */

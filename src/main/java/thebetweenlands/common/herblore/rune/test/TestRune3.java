@@ -1,10 +1,5 @@
 package thebetweenlands.common.herblore.rune.test;
 
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import thebetweenlands.api.herblore.aspect.IAspectType;
 import thebetweenlands.api.herblore.rune.DefaultRuneMarks.BlockRuneMark;
@@ -15,19 +10,19 @@ import thebetweenlands.api.herblore.rune.RuneMarkContainer;
 import thebetweenlands.api.herblore.rune.RuneType;
 import thebetweenlands.common.herblore.rune.AbstractRune;
 
-public class TestRune2 extends AbstractRune {
-	public TestRune2(IAspectType type) {
+public class TestRune3 extends AbstractRune {
+	public TestRune3(IAspectType type) {
 		super(type);
 	}
 
 	@Override
 	public String getUnlocalizedName() {
-		return "test_rune_2";
+		return "test_rune_3";
 	}
 
 	@Override
 	public RuneType getType() {
-		return RuneType.EFFECT;
+		return RuneType.PREDICATE;
 	}
 
 	@Override
@@ -36,15 +31,17 @@ public class TestRune2 extends AbstractRune {
 	}
 
 	@Override
-	public IRuneEffect activate(IRuneMarkContainer marks) {
-		BlockPos pos = marks.getMark(0, 0).<BlockPos>getUnsafe();
+	public boolean canActivate(IRuneMarkContainer marks) {
+		if(super.canActivate(marks)) {
+			BlockPos pos = marks.getMark(0, 0).<BlockPos>getUnsafe();
+			//System.out.println("CHECK TEST RUNE 3 with marks: " + pos);
+			return true;//pos.getY() >= 236;
+		}
+		return false;
+	}
 
-		/*IBlockState state = this.getChain().getWorld().getBlockState(pos);
-		TileEntity te = this.getChain().getWorld().getTileEntity(pos);
-		if(state.getBlock().canHarvestBlock(this.getChain().getWorld(), pos, (EntityPlayer)this.getChain().getUserEntity())) {
-			state.getBlock().harvestBlock(this.getChain().getWorld(), (EntityPlayer)this.getChain().getUserEntity(), pos, state, te, ItemStack.EMPTY);
-			this.getChain().getWorld().setBlockToAir(pos);
-		}*/
+	@Override
+	public IRuneEffect activate(IRuneMarkContainer marks) {
 		return null;
 	}
 

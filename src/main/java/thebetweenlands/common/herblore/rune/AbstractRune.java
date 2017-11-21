@@ -33,11 +33,6 @@ public abstract class AbstractRune implements IRune {
 	public int getChainSlot() {
 		return this.slot;
 	}
-	
-	@Override
-	public void cleanup() {
-
-	}
 
 	@Override
 	public void setChain(IRuneChain chain, int slot) {

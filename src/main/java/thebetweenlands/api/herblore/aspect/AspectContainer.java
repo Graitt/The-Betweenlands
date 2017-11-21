@@ -79,7 +79,7 @@ public class AspectContainer {
 					return this.storedStaticAmount;
 				} else {
 					List<Aspect> staticAspects = this.container.getStaticAspects();
-					if(staticAspects != null) {
+					if(staticAspects != null && !staticAspects.isEmpty()) {
 						int amount = 0;
 						for(Aspect aspect : staticAspects) {
 							if(aspect.type == this.type) {

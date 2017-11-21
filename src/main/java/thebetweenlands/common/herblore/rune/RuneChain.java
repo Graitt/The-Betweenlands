@@ -79,17 +79,15 @@ public class RuneChain implements IRuneChain {
 
 	@Override
 	public void cleanup() {
-		for(IRune rune : this.allRunes) {
-			rune.cleanup();
+		if(!this.runeEffects.isEmpty()) {
+			for(IRuneEffect effect : this.runeEffects) {
+				effect.cleanup();
+			}
 		}
 	}
 
 	@Override
 	public void update() {
-		for(IRune rune : this.allRunes) {
-			rune.update();
-		}
-
 		if(this.isActive()) {
 			this.updateActiveChain();
 		}
@@ -108,6 +106,8 @@ public class RuneChain implements IRuneChain {
 	}
 
 	protected void updateActiveChain() {
+		long start = System.nanoTime();
+		
 		this.runeActivationCooldown--;
 
 		while(this.isActive() && this.runeActivationCooldown <= 0.0001F) {
@@ -156,6 +156,8 @@ public class RuneChain implements IRuneChain {
 				}
 			}
 		}
+		
+		System.out.println("T: " + (System.nanoTime() - start) / 1000000.0F);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -195,6 +197,7 @@ public class RuneChain implements IRuneChain {
 				}
 
 				rune.drain(cost, false);
+				
 				return true;
 			}
 		}
@@ -435,6 +438,6 @@ public class RuneChain implements IRuneChain {
 			}
 		}
 
-		return new RuneMarkContainer();
+		return RuneMarkContainer.EMPTY;
 	}
 }
