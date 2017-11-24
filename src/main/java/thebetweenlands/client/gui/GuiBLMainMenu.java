@@ -39,7 +39,7 @@ public class GuiBLMainMenu extends GuiMainMenu {
 
 	private int ticks;
 
-	private GuiMainMenuBackground background = new GuiMainMenuBackground(new ResourceLocation(ModInfo.ID, "textures/gui/main/layer"), 4);
+	private GuiMainMenuBackground background = new GuiMainMenuBackground(new ResourceLocation(ModInfo.ID, "textures/gui/main/layer"), 4, true, true);
 
 	@SubscribeEvent
 	public static void onGuiOpened(GuiOpenEvent event) {

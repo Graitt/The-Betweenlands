@@ -12,6 +12,7 @@ import org.objectweb.asm.tree.MethodNode;
 import com.google.common.collect.ImmutableList;
 
 import net.minecraft.launchwrapper.IClassTransformer;
+import thebetweenlands.core.module.LoadingScreenHookTransformer;
 import thebetweenlands.core.module.PreRenderShadersHookTransformer;
 import thebetweenlands.core.module.TransformerModule;
 
@@ -22,6 +23,7 @@ public class TheBetweenlandsClassTransformer implements IClassTransformer {
 
 	static {
 		registerModule(new PreRenderShadersHookTransformer());
+		registerModule(new LoadingScreenHookTransformer());
 	}
 
 	public TheBetweenlandsClassTransformer() {

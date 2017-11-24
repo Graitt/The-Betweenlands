@@ -28,12 +28,17 @@ public class GuiMainMenuBackground extends GuiScreen {
 	private Random random = new Random();
 	private Starfield starfieldEffect;
 	private Framebuffer starfieldTextureFBO = null;
+	
+	private boolean shaders;
+	private boolean animated;
 
-	public GuiMainMenuBackground(ResourceLocation texture, int layers) {
+	public GuiMainMenuBackground(ResourceLocation texture, int layers, boolean shaders, boolean animated) {
 		this.layerTextures = new ResourceLocation[layers];
 		for(int i = 0; i < layers; i++) {
 			this.layerTextures[i] = new ResourceLocation(texture.getResourceDomain(), texture.getResourcePath() + "_" + i + ".png");
 		}
+		this.shaders = shaders;
+		this.animated = animated;
 	}
 
 	@Override
@@ -47,7 +52,7 @@ public class GuiMainMenuBackground extends GuiScreen {
 
 		this.delete();
 
-		if (ShaderHelper.INSTANCE.canUseShaders()) {
+		if (this.shaders && ShaderHelper.INSTANCE.canUseShaders()) {
 			this.starfieldTextureFBO = new Framebuffer(this.width, this.height, false);
 			this.starfieldEffect = (Starfield) new Starfield(false).init();
 			this.starfieldEffect.setTimeScale(0.00000000005F).setZoom(4.8F);
@@ -61,26 +66,28 @@ public class GuiMainMenuBackground extends GuiScreen {
 
 	@Override
 	public void updateScreen() {
-		this.layerTick++;
-
-		for(int i = 0; i < 3; i++) {
-			List<GuiFirefly> layer = this.fireFlies.get(i);
-
-			Iterator<GuiFirefly> it = layer.iterator();
-			while(it.hasNext()) {
-				GuiFirefly firefly = it.next();
-
-				if (firefly.getPosY() >= this.width + 40 ||
-						firefly.getPosY() <= -40 ||
-						firefly.getPosX() <= -40) {
-					it.remove();
-				} else {
-					firefly.update();
+		if(this.animated) {
+			this.layerTick++;
+			
+			for(int i = 0; i < 3; i++) {
+				List<GuiFirefly> layer = this.fireFlies.get(i);
+	
+				Iterator<GuiFirefly> it = layer.iterator();
+				while(it.hasNext()) {
+					GuiFirefly firefly = it.next();
+	
+					if (firefly.getPosY() >= this.width + 40 ||
+							firefly.getPosY() <= -40 ||
+							firefly.getPosX() <= -40) {
+						it.remove();
+					} else {
+						firefly.update();
+					}
 				}
-			}
-
-			if (this.random.nextInt(32) == 0 && layer.size() < 5) {
-				layer.add(new GuiFirefly(this.width + 50, this.random.nextInt(this.height), -this.random.nextFloat() * 0.8F, (this.random.nextFloat() - this.random.nextFloat()) * 1.5F));
+	
+				if (this.random.nextInt(32) == 0 && layer.size() < 5) {
+					layer.add(new GuiFirefly(this.width + 50, this.random.nextInt(this.height), -this.random.nextFloat() * 0.8F, (this.random.nextFloat() - this.random.nextFloat()) * 1.5F));
+				}
 			}
 		}
 	}
