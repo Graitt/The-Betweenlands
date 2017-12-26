@@ -1,8 +1,10 @@
 package thebetweenlands.common.herblore.rune;
 
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,10 +19,9 @@ import net.minecraft.world.World;
 import thebetweenlands.api.herblore.rune.IRune;
 import thebetweenlands.api.herblore.rune.IRuneChain;
 import thebetweenlands.api.herblore.rune.IRuneEffect;
-import thebetweenlands.api.herblore.rune.IRuneMark;
+import thebetweenlands.api.herblore.rune.IRuneLink;
 import thebetweenlands.api.herblore.rune.IRuneMarkContainer;
 import thebetweenlands.api.herblore.rune.IRuneMarkContainer.CombinatorialIterator;
-import thebetweenlands.api.herblore.rune.RuneMarkContainer;
 import thebetweenlands.api.herblore.rune.RuneType;
 
 public class RuneChain implements IRuneChain {
@@ -34,8 +35,6 @@ public class RuneChain implements IRuneChain {
 
 	protected List<IRuneEffect> runeEffects = new ArrayList<>();
 
-	protected Map<Integer, List<IRuneMark>[]> availableMarks = new HashMap<>();
-
 	protected int currentEffectRune = 0;
 
 	protected boolean active = false;
@@ -46,6 +45,9 @@ public class RuneChain implements IRuneChain {
 	protected Vec3d userPosition;
 
 	protected World world;
+
+	protected RuneChainBranch currentBranch;
+	protected Deque<RuneChainBranch> branches = new LinkedList<>();
 
 	public RuneChain(World world) {
 		this.world = world;
@@ -98,7 +100,11 @@ public class RuneChain implements IRuneChain {
 		if(this.effectRunes.size()== 0) {
 			return;
 		}
-		this.availableMarks.clear();
+
+		this.branches.clear();
+		this.currentBranch = new RuneChainBranch(this);
+		this.branches.push(this.currentBranch);
+
 		this.runeEffects.clear();
 		this.runeActivationCooldown = 1;
 		this.active = true;
@@ -107,41 +113,79 @@ public class RuneChain implements IRuneChain {
 
 	protected void updateActiveChain() {
 		long start = System.nanoTime();
-		
+
 		this.runeActivationCooldown--;
 
 		while(this.isActive() && this.runeActivationCooldown <= 0.0001F) {
 			IRune pendingRune = this.effectRunes.get(this.currentEffectRune);
 
-			if(pendingRune.getType() == RuneType.PREDICATE) {
-				//TODO Implement branching!
+			boolean doBranching = false;
+			Deque<RuneChainBranch> newBranches = null;
+			if(pendingRune.branch()) {
+				doBranching = true;
+				newBranches = new LinkedList<>();
 			}
 
-			IRuneMarkContainer runeMarkContainer = this.getRuneMarks(this.catalystRunes.size() + this.currentEffectRune);
+			Iterator<RuneChainBranch> branchIT = this.branches.iterator();
 
 			boolean activated = false;
 
 			float cooldown = 0.0F;
 
-			float chainCostMultiplier = pendingRune.getChainCostMultiplier(runeMarkContainer);
-
-			CombinatorialIterator it = runeMarkContainer.getCombinations();
-
 			int i = 0;
-			while(it.hasNext()) {
-				IRuneMarkContainer iterationRuneMarkContainer = it.next();
 
-				if(this.tryActivateRune(pendingRune, iterationRuneMarkContainer, i > 0 ? chainCostMultiplier : 1)) {
-					//Use the maximum cooldown as cooldown until the next rune can be activated
-					cooldown = Math.max(cooldown, pendingRune.getDuration(iterationRuneMarkContainer));
-					activated = true;
-				} else {
-					//Chain can no longer execute
-					this.stop();
-					break;
+			System.out.println("BRANCH COUNT: " + this.branches.size());
+
+			while(branchIT.hasNext()) {
+				RuneChainBranch sourceBranch = this.currentBranch = branchIT.next();
+
+				IRuneMarkContainer runeMarkContainer = this.getRuneMarks(this.catalystRunes.size() + this.currentEffectRune);
+
+				float chainCostMultiplier = pendingRune.getChainCostMultiplier(runeMarkContainer);
+
+				CombinatorialIterator it = runeMarkContainer.getCombinations();
+
+				boolean removeBranch = false;
+
+				while(it.hasNext()) {
+					IRuneMarkContainer iterationRuneMarkContainer = it.next();
+
+					if(doBranching) {
+						//System.out.println("BRANCH OFF: " + iterationRuneMarkContainer.getMark(0, 0));
+						this.currentBranch = new RuneChainBranch(this, sourceBranch);
+						this.currentBranch.setAvailableMarks(this.catalystRunes.size() + this.currentEffectRune, iterationRuneMarkContainer);
+						newBranches.push(this.currentBranch);
+						removeBranch = true;
+					}
+
+					if(this.tryActivateRune(pendingRune, iterationRuneMarkContainer, i > 0 ? chainCostMultiplier : 1)) {
+						//Use the maximum cooldown as cooldown until the next rune can be activated
+						cooldown = Math.max(cooldown, pendingRune.getDuration(iterationRuneMarkContainer));
+						activated = true;
+					} else {
+						//TODO: Cancel whole chain if a rune ran out of aspect since any following branch won't be able to activate either
+
+						//Chain can no longer execute
+						//this.stop();
+						//break;
+						if(doBranching) {
+							newBranches.pop();
+						} else {
+							removeBranch = true;
+						}
+						continue;
+					}
+
+					i++;
 				}
 
-				i++;
+				if(removeBranch) {
+					branchIT.remove();
+				}
+			}
+
+			if(doBranching) {
+				this.branches = newBranches;
 			}
 
 			if(!activated){
@@ -156,11 +200,14 @@ public class RuneChain implements IRuneChain {
 				}
 			}
 		}
-		
+
+		for(IRuneEffect effect : this.runeEffects) {
+			effect.update();
+		}
+
 		System.out.println("T: " + (System.nanoTime() - start) / 1000000.0F);
 	}
 
-	@SuppressWarnings("unchecked")
 	protected boolean tryActivateRune(IRune rune, IRuneMarkContainer marks, float chainCostMultiplier) {
 		if(rune.canActivate(marks)) {
 			int cost = rune.getCost(marks);
@@ -182,22 +229,10 @@ public class RuneChain implements IRuneChain {
 				IRuneMarkContainer generatedMarks = rune.generateRuneMarks(Optional.of(marks));
 
 				//Store provided marks
-				List<IRuneMark>[] availableMarkLists = this.availableMarks.get(this.catalystRunes.size() + this.currentEffectRune);
-				if(availableMarkLists == null) {
-					this.availableMarks.put(this.catalystRunes.size() + this.currentEffectRune, availableMarkLists = new List[generatedMarks.getSlotCount()]);
-				}
-				for(int m = 0; m < availableMarkLists.length; m++) {
-					List<IRuneMark> availableMarkList = availableMarkLists[m];
-					if(availableMarkList == null) {
-						availableMarkLists[m] = availableMarkList = new ArrayList<>(generatedMarks.getMarkCount(m));
-					}
-					for(int m2 = 0; m2 < generatedMarks.getMarkCount(m); m2++) {
-						availableMarkList.add(generatedMarks.getMark(m, m2));
-					}
-				}
+				this.currentBranch.storeMarks(this.catalystRunes.size() + this.currentEffectRune, generatedMarks);
 
 				rune.drain(cost, false);
-				
+
 				return true;
 			}
 		}
@@ -289,10 +324,10 @@ public class RuneChain implements IRuneChain {
 	}
 
 	@Override
-	public int getLinkedInputRuneCount(int slot, int outputMarkIndex) {
+	public int getRuneLinkCount(int slot, int markIndex) {
 		List<Tuple<Integer, Integer>>[] outputLinks = this.markLinksOutputs.get(slot);
-		if(outputLinks != null && outputMarkIndex >= 0 && outputMarkIndex < outputLinks.length) {
-			List<Tuple<Integer, Integer>> markOutputLinks = outputLinks[outputMarkIndex];
+		if(outputLinks != null && markIndex >= 0 && markIndex < outputLinks.length) {
+			List<Tuple<Integer, Integer>> markOutputLinks = outputLinks[markIndex];
 			if(markOutputLinks != null) {
 				return markOutputLinks.size();
 			}
@@ -302,23 +337,19 @@ public class RuneChain implements IRuneChain {
 
 	@Override
 	@Nullable
-	public Tuple<Integer, Integer> getLinkedInputRune(int slot, int outputMarkIndex, int index) {
+	public IRuneLink getRuneLink(int slot, int markIndex, int linkIndex) {
 		List<Tuple<Integer, Integer>>[] outputLinks = this.markLinksOutputs.get(slot);
-		if(outputLinks != null && outputMarkIndex >= 0 && outputMarkIndex < outputLinks.length) {
-			List<Tuple<Integer, Integer>> markOutputLinks = outputLinks[outputMarkIndex];
-			if(markOutputLinks != null && index >= 0 && index < markOutputLinks.size()) {
-				return markOutputLinks.get(index);
+		if(outputLinks != null && markIndex >= 0 && markIndex < outputLinks.length) {
+			List<Tuple<Integer, Integer>> markOutputLinks = outputLinks[markIndex];
+			if(markOutputLinks != null && linkIndex >= 0 && linkIndex < markOutputLinks.size()) {
+				Tuple<Integer, Integer> link = markOutputLinks.get(linkIndex);
+				return new RuneLink(this, slot, markIndex, link.getFirst(), link.getSecond());
 			}
 		}
-		return null;
-	}
-
-	@Override
-	@Nullable
-	public Tuple<Integer, Integer> getLinkedOutputRune(int slot, int inputMarkIndex) {
 		Tuple<Integer, Integer>[] inputLinks = this.markLinksInputs.get(slot);
-		if(inputLinks != null && inputMarkIndex >= 0 && inputMarkIndex < inputLinks.length) {
-			return inputLinks[inputMarkIndex];
+		if(inputLinks != null && markIndex >= 0 && markIndex < inputLinks.length) {
+			Tuple<Integer, Integer> link = inputLinks[markIndex];
+			return new RuneLink(this, link.getFirst(), link.getSecond(), slot, markIndex);
 		}
 		return null;
 	}
@@ -410,34 +441,8 @@ public class RuneChain implements IRuneChain {
 		return unlinked;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public IRuneMarkContainer getRuneMarks(int slot) {
-		if(slot >= 0 && slot < this.allRunes.size()) {
-
-			IRune rune = this.allRunes.get(slot);
-
-			Tuple<Integer, Integer>[] links = this.markLinksInputs.get(slot);
-
-			if(links != null) {
-				List<IRuneMark>[] markLists = new List[rune.getRequiredRuneMarks().getSlotCount()];
-
-				for(int m = 0; m < links.length; m++) {
-					List<IRuneMark>[] availableMarkLists = this.availableMarks.get(links[m].getFirst());
-					if(availableMarkLists.length >= links[m].getSecond()) {
-						List<IRuneMark> availableMarks = availableMarkLists[links[m].getSecond()];
-						if(availableMarks != null) {
-							markLists[m] = availableMarks;
-						} else {
-							markLists[m] = new ArrayList<IRuneMark>();
-						}
-					}
-				}
-
-				return new RuneMarkContainer(markLists);
-			}
-		}
-
-		return RuneMarkContainer.EMPTY;
+		return this.currentBranch.getAvailableMarks(slot);
 	}
 }

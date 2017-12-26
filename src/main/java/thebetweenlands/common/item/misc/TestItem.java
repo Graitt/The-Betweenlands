@@ -34,7 +34,7 @@ public class TestItem extends Item {
 
 				RuneChain chain = new RuneChain(worldIn);
 
-				IRune rune1 = new TestRune1(AspectRegistry.ARMANIIS, 20);
+				IRune rune1 = new TestRune1(AspectRegistry.ARMANIIS, 8);
 				IRune rune2 = new TestRune2(AspectRegistry.CELAWYNN);
 				IRune rune3 = new TestRune3(AspectRegistry.CELAWYNN);
 

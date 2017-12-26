@@ -1,5 +1,6 @@
 package thebetweenlands.common.herblore.rune.test;
 
+import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import thebetweenlands.api.herblore.aspect.IAspectType;
 import thebetweenlands.api.herblore.rune.DefaultRuneMarks.BlockRuneMark;
@@ -34,8 +35,9 @@ public class TestRune3 extends AbstractRune {
 	public boolean canActivate(IRuneMarkContainer marks) {
 		if(super.canActivate(marks)) {
 			BlockPos pos = marks.getMark(0, 0).<BlockPos>getUnsafe();
+			return this.chain.getWorld().getBlockState(pos).getBlock() == Blocks.GRASS;
 			//System.out.println("CHECK TEST RUNE 3 with marks: " + pos);
-			return true;//pos.getY() >= 236;
+			//return true;//pos.getY() >= 236;
 		}
 		return false;
 	}

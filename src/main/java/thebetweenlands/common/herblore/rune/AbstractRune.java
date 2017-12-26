@@ -25,10 +25,16 @@ public abstract class AbstractRune implements IRune {
 	}
 
 	@Override
+	public boolean branch() {
+		//Currently only predicate runes should branch off
+		return this.getType() == RuneType.PREDICATE;
+	}
+
+	@Override
 	public IRuneChain getChain() {
 		return this.chain;
 	}
-	
+
 	@Override
 	public int getChainSlot() {
 		return this.slot;

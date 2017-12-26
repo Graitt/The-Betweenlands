@@ -38,7 +38,7 @@ public class TestRune2 extends AbstractRune {
 	@Override
 	public IRuneEffect activate(IRuneMarkContainer marks) {
 		BlockPos pos = marks.getMark(0, 0).<BlockPos>getUnsafe();
-
+		this.getChain().getWorld().setBlockToAir(pos);
 		/*IBlockState state = this.getChain().getWorld().getBlockState(pos);
 		TileEntity te = this.getChain().getWorld().getTileEntity(pos);
 		if(state.getBlock().canHarvestBlock(this.getChain().getWorld(), pos, (EntityPlayer)this.getChain().getUserEntity())) {

@@ -45,12 +45,18 @@ public interface IRune {
 	public IRuneMarkContainer getRequiredRuneMarks();
 
 	/**
-	 * Returns whether the rune can activate with the given rune marks.
-	 * Runes should only accept singular rune mark containers ({@link IRuneMarkContainer#isSingularContainer()})
-	 * @param marks
+	 * Returns whether the rune can activate with the given rune mark combination.
+	 * <p><b>Only accepts singular rune mark containers</b> ({@link IRuneMarkContainer#isSingularContainer()})
+	 * @param marks Rune mark container with one rune mark combination (ie <b>exactly one</b> mark per slot)
 	 * @return
 	 */
 	public boolean canActivate(IRuneMarkContainer marks);
+
+	/**
+	 * Returns whether this rune causes branching of the rune chain. See {@link IRuneChain} for details
+	 * @return
+	 */
+	public boolean branch();
 
 	/**
 	 * Activates this rune and returns the rune effect that should be activated.

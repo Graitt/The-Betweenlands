@@ -1,8 +1,9 @@
 package thebetweenlands.api.herblore.rune;
 
+import com.google.common.base.MoreObjects;
+
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
-import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -43,6 +44,11 @@ public class DefaultRuneMarks {
 		public String getUnlocalizedName() {
 			return "rune_mark.block";
 		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).add("pos", this.pos).toString();
+		}
 	}
 
 	public static class EntityRuneMark implements IRuneMark<Entity> {
@@ -77,6 +83,11 @@ public class DefaultRuneMarks {
 		@Override
 		public String getUnlocalizedName() {
 			return "rune_mark.entity";
+		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).add("entity", this.entity).toString();
 		}
 	}
 }

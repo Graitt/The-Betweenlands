@@ -4,23 +4,25 @@ import javax.annotation.Nullable;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ITickable;
-import net.minecraft.util.Tuple;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 /**
  * A rune chain consists of multiple runes that are activated one after another.
  * At least one catalyst rune is required for the rune chain to be able to activate itself.
- * 
+ * <p>
  * Generally, the rune chain runs from the beginning to the end by activating one rune at a time.
- * However, if the next rune is a {@link RuneType#PREDICATE} type rune the chain can branch into
- * multiple new branches, see {@link RuneType#PREDICATE} for details. All branches run at the same pace, so
- * one rune activation per branch per rune chain step.
- * If a non-predicate rune has mark inputs that have multiple marks available per input, then that rune is
+ * However, if the next rune's {@link IRune#branch()} returns true, the chain can branch into
+ * multiple new branches (ie the rune chain will branch off for each input mark combination). Each of those
+ * new branches will contain exactly one of the input mark combinations (ie one mark per slot). 
+ * All branches run at the same pace, so one rune activation per branch per rune chain step.
+ * If a rune that does not branch off and has multiple marks available per input, then that rune is
  * activated multiple times, once for each possible input mark combination. If this occurs or multiple branches are 
- * updated in one step, no cooldown is applied until all marks or branches have been processed, and only then the highest cooldown that any of the activations
- * in the branches would have produced is applied once to the rune chain after the step has ended.
- * If a {@link RuneType#MARK} type rune produces marks then those marks are only added to the current branch.
+ * updated in one step, no cooldown is applied until all marks or branches have been processed, and only then the highest cooldown 
+ * that any of the activations in the branches would have produced is applied once to the rune chain after the step has ended.
+ * If a rune produces marks then those marks are only added to the current branch.
+ * If a rune's {@link IRune#canActivate(IRuneMarkContainer)} for a given rune mark combination returns false, only the current branch is stopped and removed, all
+ * other branches will continue.
  */
 public interface IRuneChain extends ITickable {
 	/**
@@ -28,27 +30,27 @@ public interface IRuneChain extends ITickable {
 	 * @param entity
 	 */
 	public void setUser(@Nullable Entity entity, @Nullable Vec3d position);
-	
+
 	/**
 	 * Returns the user entity
 	 * @return
 	 */
 	@Nullable
 	public Entity getUserEntity();
-	
+
 	/**
 	 * Returns the user position
 	 * @return
 	 */
 	@Nullable
 	public Vec3d getUserPosition();
-	
+
 	/**
 	 * Returns the world
 	 * @return
 	 */
 	public World getWorld();
-	
+
 	/**
 	 * Called when the rune chain should no longer affect the world
 	 */
@@ -134,30 +136,23 @@ public interface IRuneChain extends ITickable {
 	public IRune getRune(int slot);
 
 	/**
-	 * Returns how many runes are linked to the specified slot and output mark index
-	 * @param slot Rune slot
+	 * Returns how many runes are linked to the specified rune slot and mark index.
+	 * At most 1 for input runes.
+	 * @param slot Rune Slot
+	 * @param markIndex Mark Index
 	 * @return
 	 */
-	public int getLinkedInputRuneCount(int slot, int outputMarkIndex);
+	public int getRuneLinkCount(int slot, int markIndex);
 
 	/**
-	 * Returns the rune and output mark index that is linked to the specified slot and input mark index
-	 * @param slot Rune slot
-	 * @param mark Input mark index
+	 * Returns the rune link at the specified output rune slot and mark index
+	 * @param slot Rune Slot
+	 * @param markIndex Mark Index
+	 * @param linkIndex Link Index, see {@link #getRuneLinkCount(int, int)}
 	 * @return
 	 */
 	@Nullable
-	public Tuple<Integer, Integer> getLinkedOutputRune(int slot, int inputMarkIndex);
-
-	/**
-	 * Returns the input rune and input rune mark index that are is to the specified slot, output mark index and index
-	 * @param slot Rune slot
-	 * @param outputMarkIndex Output mark index
-	 * @param index Link index, see {@link #getLinkedInputRuneCount(int, int)}
-	 * @return
-	 */
-	@Nullable
-	public Tuple<Integer, Integer> getLinkedInputRune(int slot, int outputMarkIndex, int index);
+	public IRuneLink getRuneLink(int slot, int markIndex, int linkIndex);
 
 	/**
 	 * Returns all rune marks that are currently available to the specified slot

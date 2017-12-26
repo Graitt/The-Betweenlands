@@ -1,5 +1,7 @@
 package thebetweenlands.common.herblore.rune.test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import net.minecraft.util.math.BlockPos;
@@ -79,21 +81,22 @@ public class TestRune1 extends AbstractRune {
 			
 			long start = System.nanoTime();
 			
-			IRuneMark[][] generated = new IRuneMark[1][(range*2+1)*(range*2+1)*(range*2+1)];
-
+			List<IRuneMark> generated = new ArrayList<>((range*2+1)*(range*2+1)*(range*2+1));
+			
 			int i = 0;
 			for(int xo = -range; xo <= range; xo++) {
 				for(int yo = -range; yo <= range; yo++) {
 					for(int zo = -range; zo <= range; zo++) {
-						generated[0][i] = new BlockRuneMark(pos.add(xo, yo, zo), world);
-						i++;
+						if(xo*xo + yo*yo + zo*zo < range*range) {
+							generated.add(new BlockRuneMark(pos.add(xo, yo, zo), world));
+						}
 					}
 				}
 			}
 			
 			//System.out.println("test2");
 			
-			IRuneMarkContainer container = new RuneMarkContainer(generated);
+			IRuneMarkContainer container = new RuneMarkContainer(new IRuneMark[][]{generated.toArray(new IRuneMark[0])});
 			
 			System.out.println("Gen positions: " + (System.nanoTime() - start) / 1000000F);
 			
