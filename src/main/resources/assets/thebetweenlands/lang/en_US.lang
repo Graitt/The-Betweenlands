@@ -757,7 +757,7 @@ tooltip.octine_shield=Sets enemies on fire
 tooltip.syrmorite_shield=Hold '%1$s' + '%2$s' to charge\nup and then let go of '%1$s' to charge\nat enemies
 tooltip.valonite_shield=Hold '%1$s' + '%2$s' to charge\nup and then let go of '%1$s' to charge\nat enemies. Reflects projectiles
 tooltip.dentrothyst_shield=Blocks splash potion effects
-tooltip.caving_rope=Press '%s' to connect or disconnect\nto/from a nearby caving rope
+tooltip.caving_rope=Press '%s' to connect or disconnect\nto/from a nearby caving rope.\n§6The caving rope will despawn after\n§6%s minutes if not connected to\n§6a player.
 tooltip.hearthgrove_log=This dense log is excellent as fuel.\nCan be tarred
 tooltip.decay_food=Heals decay
 tooltip.swamp_talisman_linked=Linked to portal\nX: %s\nY: %s\nZ: %s
@@ -871,8 +871,8 @@ chat.aspect.discovery.byariis=The gecko is chewing furiously on its tail and loo
 chat.compost.full=The compost bin is full
 chat.compost.not.compostable=This item is not compostable
 
-chat.rope.already_connected=Already connected to another climbing rope
-chat.rope.disconnected=You were disconnected from the climbing rope
+chat.rope.already_connected=Already connected to another caving rope
+chat.rope.disconnected=You were disconnected from the caving rope
 chat.rope.too_far=You're too far away from the last anchor point
 
 chat.bed_spawn_set=Your Spawn has been set to this Moss Bed
@@ -1384,6 +1384,8 @@ config.thebetweenlands.portal_dimension_whitelist=Portal dimensions whitelist
 config.thebetweenlands.portal_default_return_dimension=Default portal return dimension
 config.thebetweenlands.activate_rift_on_first_join=Activate Rift on first join
 config.thebetweenlands.activate_rift_on_first_join_duration=Activate Rift on first join duration
+config.thebetweenlands.start_in_betweenlands=Start in Betweenlands
+config.thebetweenlands.start_in_portal=Start in Portal
 
 config.thebetweenlands.rendering=Rendering
 config.thebetweenlands.wisp_quality=Wisp Rendering Quality
@@ -1414,6 +1416,7 @@ config.thebetweenlands.tool_weakness_whitelist=Tool Weakness Whitelist
 config.thebetweenlands.tool_weakness_blacklist=Tool Weakness Blacklist
 config.thebetweenlands.torch_whitelist=Torch Whitelist
 config.thebetweenlands.torch_blacklist=Torch Blacklist
+config.thebetweenlands.caving_rope_despawn_time=Caving Rope Despawn Time
 
 config.thebetweenlands.mob_spawning=Mob Spawning
 config.thebetweenlands.max_entities_per_loaded_area=Max. entities per loaded area
